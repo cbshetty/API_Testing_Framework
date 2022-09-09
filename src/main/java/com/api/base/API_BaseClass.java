@@ -91,6 +91,13 @@ public class API_BaseClass {
 	private static String EndPoint;
 
 	public static Object PojoMapClassObject;
+	
+	public static void setConstantsClassObject(Object constantsClassObject) {
+		ConstantClassObject=constantsClassObject;
+	}
+	public static Object getConstantsClassObject() {
+		return ConstantClassObject;
+	}
 
 	public static void API_Setup(String APIName,Object ContantClassInstance, Boolean ...silentrun) {	
 		//RestAssured.baseURI = baseURL;

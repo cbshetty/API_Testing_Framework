@@ -26,5 +26,10 @@ public class App_API_Constants {
 	public static String RestAPI_ReqHeaders_Values= "headerValue1,2,3";
 	public static String RestAPI_MethodType = "POST";
 	public static String RestAPI_RequestBody = "json-payload-string";
-
+	
+	//Sample API
+	//public static String Sample_BaseURI = "https://reqres.in";
+	public static String Sample_EndPoint = "/api/users/2";
+	public static String Sample_MethodType = "GET";
+	
 }

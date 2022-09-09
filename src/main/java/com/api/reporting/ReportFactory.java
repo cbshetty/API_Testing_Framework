@@ -17,11 +17,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -39,7 +37,7 @@ import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.SimpleEmail;
 import org.apache.logging.log4j.core.util.FileUtils;
-import org.apache.xmlbeans.impl.xb.ltgfmt.TestsDocument.Tests;
+
 
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
@@ -58,7 +56,6 @@ import io.cucumber.plugin.event.Result;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-
 import com.api.logging.*;
 import com.api.utilities.ExcelUtil;
 
@@ -79,6 +76,7 @@ public class ReportFactory {
 	private static String WebHookURL;
 	private static String ChannelID;
 	private static String Environment;
+	private static String EnvironmentURL;
 	private static String ReportName;
 	private static String ReportLink;
 	private static Integer totalTests;
@@ -101,16 +99,10 @@ public class ReportFactory {
 	public static HashMap<String,HashMap<String, String>> TestCases;
 
 	public static ExtentTest tcTestNode;
-	public static ExtentTest responseTestNode;
 
 	public static ExtentHtmlReporter tcReporter;
 	public static ExtentReports tcReport;
 	public static ExtentTest tcTest;
-
-	//Response Message Map
-	public static Map<String,List<String>> ResponseMap;
-	public static String ResponseMapTest;
-	public static String ResponseMapMessage;
 
 
 	public static void StartReport(String reportname) {
@@ -131,9 +123,6 @@ public class ReportFactory {
 		//Test Case test Node
 		tcTestNode = report.createTest("TEST CASES");
 
-		/*//Reponse Map Test Node
-		responseTestNode = report.createTest("API RESPONSES");*/
-
 		//Exception Handling
 		handler = new ExceptionHandler();
 		Thread.setDefaultUncaughtExceptionHandler(handler);
@@ -145,54 +134,6 @@ public class ReportFactory {
 		tcReport = new ExtentReports();
 		tcReport.attachReporter(tcReporter);
 		tcTest = tcReport.createTest("TEST CASES");
-
-		//Initialize Reponse Map
-		ResponseMap  =new HashMap<String,List<String>>();
-	}
-
-	public static void AssignCategories(Collection<String> categories) {
-		for(String category: categories) {
-			tests.get().assignCategory(category);
-		}
-	}
-
-	public static void SetResponseMap(String test, String response) {
-		ResponseMapTest=test;
-		ResponseMapMessage=response;
-		UpdateResponseMap(ResponseMapTest,ResponseMapMessage);
-	}
-
-	public static void UpdateResponseMap(String test, String response) {
-		if(ResponseMap.keySet().contains(test)) {
-			List<String> respList = new ArrayList<String>();
-			for(String resp:ResponseMap.get(test)) {
-				respList.add(resp);
-			}
-			respList.add(response);
-			ResponseMap.put(test, respList);
-		}else {
-			ResponseMap.put(test, Arrays.asList(response));
-		}
-	}
-	public static void PrintReponseMap() {
-		//Reponse Map Test Node
-		responseTestNode = report.createTest("API RESPONSES");
-		responseTestNode.info("Listing API responses times in the test cases.");
-		for(String test:ResponseMap.keySet()) {
-			ExtentTest testSubNode = responseTestNode.createNode(test);
-			for(String resp:ResponseMap.get(test)) {
-				testSubNode.info("<div id=\"text-display\" style=\"height: 40px; overflow-y: scroll; width: 600px\">"+resp+"</div>");
-			}
-		}
-	}
-	public static void PrintTestLog() {
-		/*LinkedList<String> loglist = LogFactory.GetLogList();
-		String log="";
-		for(String message:loglist) {
-			log+=(message+"\n");
-		}
-		tests.get().info("<a><details><summary></summary>"+"<font color=black><div id=\"text-display\" style=\"height: 600px; overflow-y: scroll; width: 600px\">"+log+"</div></font><details></a>");
-		*/
 	}
 	public static void setCucumberReports() {
 		System.setProperty("cucumber.options", "--features src/test/resources/IPO_Features --glue stepdefs");
@@ -202,13 +143,19 @@ public class ReportFactory {
 		tests.set(test);
 		testStatus.set(0);
 		testPassStatus.set(0);
-		LogFactory.InitLogList();
 		LogFactory.LogInfo("=========Starting Test "+testname+"==================");
 		//LogFactory.LogInfo("Starting "+testname);
 
 		testName.set(testname);
 		totalTests++;
 	}
+
+	public static void AssignCategories(Collection<String> categories) {
+		for(String category: categories) {
+			tests.get().assignCategory(category);
+		}
+	}
+
 	public static void testInfo(String message) {
 		tests.get().info(message);
 		LogFactory.LogInfo(message);
@@ -228,6 +175,7 @@ public class ReportFactory {
 		//tests.get().fail("<b><font color=red>"+message+"<font></b>\n"+CaptureScreenshot());
 		tests.get().fail("<b><font color=red>"+message+"<font></b>\n");
 		LogFactory.LogWarning(message);
+
 	}
 	public static ExtentTest getTest() {
 		return tests.get();
@@ -253,13 +201,11 @@ public class ReportFactory {
 		if((testStatus.get()==0)&&(testPassStatus.get()==0)) {
 			//ReportFactory.testInfo("Overall Status: NO TESTS EXECUTED");
 			tests.get().skip("Overall Status: NO TESTS EXECUTED");
-			PrintTestLog();
 			tests.remove();
 			LogFactory.LogInfo("=========Ending Test==================");	
 		}else if(testStatus.get()!=0) {
 			//ReportFactory.testInfo("Overall Status: FAILED ("+testStatus.get()+" failure(s))");
 			tests.get().fail("Overall Status: FAILED ("+testStatus.get()+" failure(s))");
-			PrintTestLog();
 			tests.remove();
 			LogFactory.LogInfo("=========Ending Test==================");
 			totalFailTests++;
@@ -270,7 +216,6 @@ public class ReportFactory {
 			//ReportFactory.testInfo("<pre><b>"+errorDetails+"</b></pre>");
 			ReportFactory.testInfo("<pre><b>An exception occured while executing step</b></pre>");
 			ReportFactory.FailTest("Overall Status: FAILED (All test steps not executed)");
-			PrintTestLog();
 			tests.remove();
 			LogFactory.LogInfo("=========Ending Test==================");
 			totalFailTests++;
@@ -280,7 +225,6 @@ public class ReportFactory {
 			//ReportFactory.testInfo("<pre><b>"+errorDetails+"</b></pre>");
 			ReportFactory.testInfo("<pre><b>An exception occured while executing step</b></pre>");
 			ReportFactory.FailTest("Overall Status: FAILED");
-			PrintTestLog();
 			tests.remove();
 			LogFactory.LogInfo("=========Ending Test==================");
 			totalFailTests++;
@@ -288,7 +232,6 @@ public class ReportFactory {
 			throw new RuntimeException();
 		}else {
 			ReportFactory.testInfo("Overall Status: PASSED");
-			PrintTestLog();
 			tests.remove();
 			LogFactory.LogInfo("=========Ending Test==================");
 			totalPassTests++;
@@ -301,6 +244,26 @@ public class ReportFactory {
 	public static void SetTestCaseErrorDetials(String error) {
 		errorDetails=error;
 	}
+	
+	public static void Setup_SlackIntegration() {
+		String testName = "";
+		if(System.getProperty("testName")!=null) {
+			testName=System.getProperty("testName");
+		}
+		String channelId="";
+		if(System.getProperty("channelID")!=null) {
+			channelId=System.getProperty("channelID");
+		}
+		if((System.getProperty("Env")!=null) && (System.getProperty("EnvURL")!=null)) {
+			ReportFactory.SetSlackDetails(channelId, testName+" Test Execution Summary",System.getProperty("EnvURL"), System.getProperty("Env"));
+		}else if(System.getProperty("Env")!=null) {
+			ReportFactory.SetSlackDetails(channelId, testName+" Test Execution Summary",System.getProperty("Env"),System.getProperty("Env"));
+		}else if(System.getProperty("EnvURL")!=null) {
+			ReportFactory.SetSlackDetails(channelId, testName+" Test Execution Summary", System.getProperty("EnvURL"),System.getProperty("EnvURL"));
+		}else {
+			ReportFactory.SetSlackDetails(channelId, testName+" Test Execution Summary", "BaseURI", "Default");
+		}
+	}
 
 	/*public static void SetSlackDetails(String webHookURL, String reportName, String environmentURL) {
 		WebHookURL=webHookURL;
@@ -308,11 +271,14 @@ public class ReportFactory {
 		Environment=environmentURL;
 		ReportLink="";
 	}*/
-	public static void SetSlackDetails(String channelID, String reportName, String environmentURL) {
+	public static void SetSlackDetails(String channelID, String reportName, String environmentURL,String environment) {
 		ChannelID=channelID;
 		ReportName=reportName;
-		Environment=environmentURL;
+		Environment=environment;
+		EnvironmentURL=environmentURL;
 		ReportLink="";
+		System.out.println(Environment);
+		System.out.println(EnvironmentURL);
 	}
 	public static void PublishReportOnSlack() {
 		for(String channel: ChannelID.split(",")) {
@@ -408,13 +374,14 @@ public class ReportFactory {
 			PublishReportOnSlack4();
 		}	
 	}
+	
 	public static void PublishReportOnSlack3(){
 		//<${{ needs.presigned-url.outputs.s3_url }}|Entent Report Link>
 		String reportLink = System.getProperty("ReportLink");
 		ExcelUtil blocksXl = new ExcelUtil("src/test/resources/Test_Status.xlsx");
 		blocksXl.setAvtiveSheet("Blocks");
 		int rowCount = blocksXl.getNumberOfDataRows()+1; 
-		String channelId = blocksXl.getParam(1, 0);
+		String channelId = System.getProperty("channelID");
 		for(String channel: channelId.split(",")) {	
 			SlackUtil slack = new SlackUtil(channel);
 			for(int i=0;i<rowCount;i++) {
@@ -492,7 +459,6 @@ public class ReportFactory {
 	}
 	 */
 	public static void EndReport() {
-		PrintReponseMap();
 		report.flush();
 		tcReport.flush();
 		LogFactory.LogInfo("Test Report Path:- "+reportFilePath);
@@ -728,4 +694,5 @@ public class ReportFactory {
 			}
 		}
 	}
+	
 }

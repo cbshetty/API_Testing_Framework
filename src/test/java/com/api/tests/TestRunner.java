@@ -1,6 +1,7 @@
 package com.api.tests;
 
-import com.api.reporting.ReportFactory;
+import com.api.base.API_BaseClass;
+import com.api.data.App_API_Constants;
 import com.bdd.base.BDD_BaseClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -8,34 +9,25 @@ import io.cucumber.junit.Cucumber;
 import io.cucumber.junit.CucumberOptions;
 
 @RunWith(Cucumber.class)
-@CucumberOptions(features= {"src/test/resources/AMX_Features/"},
-glue={"stepdefs"},
+@CucumberOptions(features= {"src/test/resources/features/"},
+glue={"stepdefs","com.bdd.base"},
 monochrome=true,
 plugin =
 {
-		"pretty" , 
-		"json:target/cucumber.json",
-		"html:target/cucumber"/*,
+		"pretty" ,
+		"junit:target/bdd_report.xml",
+		"json:target/bdd_report.json",
+		"html:target/bdd_htmlreport"/*,
 		"com.api.reporting.TestCaseListener",
 		"com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"*/
 },
-dryRun=true,
-tags = "@SmartAPI"
+dryRun=false,
+tags = "@tag"
 		)
 public class TestRunner extends BDD_BaseClass{
 	@BeforeClass
-	public static void Setup_SlackIntegration() {
-		/*if(System.getProperty("channelID")!=null) {
-			AMX_API_Constants.AMXSlack_ChannelID=System.getProperty("channelID");
-		}
-		String TestName="Test Execution Summary";
-		if(System.getProperty("TestName")!=null) {
-			TestName = System.getProperty("TestName");
-		}
-		if(System.getProperty("EnvURL")!=null) {
-			ReportFactory.SetSlackDetails(AMX_API_Constants.AMXSlack_ChannelID, TestName, System.getProperty("EnvURL"));
-		}else {
-			ReportFactory.SetSlackDetails(AMX_API_Constants.AMXSlack_ChannelID, TestName, AMX_API_Constants.AMX_BaseURI);
-		}*/
+	public static void SetConstantsClass() {
+		API_BaseClass.setConstantsClassObject(new App_API_Constants());
 	}
+
 }
