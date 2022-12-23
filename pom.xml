@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>API_Testing_Framework</groupId>
 	<artifactId>API_Testing_Framework</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<properties>
 		<runnerFile>TestRunner.java</runnerFile>
 		<MainClass>com.api.tests.ScratchPad</MainClass>
